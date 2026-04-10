@@ -26,6 +26,11 @@ func (t *Todo) toggleDone() {
 	t.UpdatedAt = time.Now()
 }
 
+func (t *Todo) updateTitle(title string) {
+	t.Title = title
+	t.UpdatedAt = time.Now()
+}
+
 // TodoList represents a slice of todo items
 type TodoList []*Todo
 

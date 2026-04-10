@@ -230,6 +230,68 @@ func (s *server) DoneHandler() httprouter.Handle {
 	}
 }
 
+func (s *server) EditHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		id := p.ByName("id")
+		i, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		newTitle := strings.TrimSpace(r.FormValue("title"))
+		if newTitle == "" {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		if len(newTitle) > s.maxTitleLength {
+			newTitle = newTitle[:s.maxTitleLength]
+		}
+
+		key := fmt.Sprintf("todo_%d", i)
+		data, err := db.Get([]byte(key))
+		if err != nil {
+			if errors.Is(err, bitcask.ErrKeyNotFound) {
+				http.Error(w, "Not Found", http.StatusNotFound)
+				return
+			}
+			log.WithError(err).WithField("key", key).Error("error retrieving todo")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		var todo Todo
+		if err = json.Unmarshal(data, &todo); err != nil {
+			log.WithError(err).WithField("key", key).Error("error unmarshaling todo")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		todo.updateTitle(newTitle)
+
+		data, err = json.Marshal(&todo)
+		if err != nil {
+			log.WithError(err).WithField("key", key).Error("error marshaling todo")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if err = db.Put([]byte(key), data); err != nil {
+			log.WithError(err).WithField("key", key).Error("error storing todo")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if err = db.Sync(); err != nil {
+			log.WithError(err).Error("error flushing db")
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func (s *server) ClearHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		var id string
@@ -321,6 +383,7 @@ func (s *server) initRoutes() {
 
 	s.router.POST("/done/:id", s.DoneHandler())
 	s.router.POST("/clear/:id", s.ClearHandler())
+	s.router.POST("/edit/:id", s.EditHandler())
 }
 
 func newServer(bind string, maxItems int, maxTitleLength int, colorTheme string) *server {

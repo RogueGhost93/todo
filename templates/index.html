@@ -10,14 +10,14 @@
         <button class="todo-btn todo-btn-check" type="submit" title="Mark done">
             <i class="icon icon-check"></i>
         </button>
-        <span class="todo-text">{{ $Todo.Title }}</span>
+        <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
     </form>
     {{else}}
     <form action="/clear/{{$Todo.ID}}" method="POST" class="todo-item done">
         <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
             <i class="icon icon-cross"></i>
         </button>
-        <span class="todo-text">{{ $Todo.Title }}</span>
+        <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
     </form>
     {{end}}
     {{ end }}

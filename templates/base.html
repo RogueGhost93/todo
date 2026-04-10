@@ -152,6 +152,25 @@
         .todo-text {
             flex: 1;
             font-size: 0.875rem;
+            cursor: text;
+            border-radius: 0.2rem;
+        }
+
+        .todo-text:hover {
+            opacity: 0.75;
+        }
+
+        .todo-edit-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--label);
+            color: var(--foreground);
+            font-size: 0.875rem;
+            font-family: inherit;
+            padding: 0;
+            outline: none;
+            min-width: 0;
         }
 
         .divider {
@@ -292,6 +311,53 @@
 
         setTheme(activeTheme(), false);
     })();
+
+    // ── Inline editing ──
+    document.querySelectorAll('.todo-text').forEach(function (span) {
+        span.addEventListener('click', function () {
+            var id = span.dataset.id;
+            var original = span.textContent.trim();
+            var cancelled = false;
+
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.value = original;
+            input.className = 'todo-edit-input';
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+
+            input.addEventListener('blur', function () {
+                var newTitle = input.value.trim();
+                if (!cancelled && newTitle && newTitle !== original) {
+                    fetch('/edit/' + id, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'title=' + encodeURIComponent(newTitle)
+                    }).then(function (r) {
+                        if (r.ok) span.textContent = newTitle;
+                        input.replaceWith(span);
+                    }).catch(function () {
+                        input.replaceWith(span);
+                    });
+                } else {
+                    input.replaceWith(span);
+                }
+            });
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    input.blur();
+                }
+                if (e.key === 'Escape') {
+                    cancelled = true;
+                    input.blur();
+                }
+            });
+        });
+    });
 </script>
 {{ template "scripts" . }}
 
