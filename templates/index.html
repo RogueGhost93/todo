@@ -1,50 +1,34 @@
 {{define "content"}}
-<section class="container">
-    <div class="columns">
-        <div class="column">
-            {{ range $Todo  := .TodoList }}
-            <form action="/done/{{$Todo.ID}}" method="POST">
-                <div class="input-group mb-10">
-                    <input type="hidden" name="id" value="{{ $Todo.ID }}" />
-                    {{if not $Todo.Done}}
-                    <button class="btn btn-action" type="submit">
-                        <i class="icon icon-check"></i>
-                    </button>
-                    {{else}}
-                    <a class="btn btn-action btn-red" href="/clear/{{$Todo.ID}}">
-                        <i class="icon icon-cross"></i>
-                    </a>
-                    {{end}}
-                    <span class="ml-10"></span>
-                    <span class="input-group-addon">
-                        {{if $Todo.Done}}
-                        <del>{{ $Todo.Title }}</del>
-                        {{else}}
-                        {{ $Todo.Title }}
-                        {{end}}
-                    </span>
-                </div>
-            </form>
-            {{end}}
-        </div>
+<div class="todo-list">
+    {{ if not .TodoList }}
+    <p class="empty-state">nothing to do — add something below</p>
+    {{ end }}
+    {{ range $Todo := .TodoList }}
+    {{if not $Todo.Done}}
+    <form action="/done/{{$Todo.ID}}" method="POST" class="todo-item">
+        <input type="hidden" name="id" value="{{ $Todo.ID }}" />
+        <button class="todo-btn todo-btn-check" type="submit" title="Mark done">
+            <i class="icon icon-check"></i>
+        </button>
+        <span class="todo-text">{{ $Todo.Title }}</span>
+    </form>
+    {{else}}
+    <div class="todo-item done">
+        <a class="todo-btn todo-btn-clear" href="/clear/{{$Todo.ID}}" title="Remove">
+            <i class="icon icon-cross"></i>
+        </a>
+        <span class="todo-text">{{ $Todo.Title }}</span>
     </div>
+    {{end}}
+    {{ end }}
+</div>
 
-    <header class="navbar">
-        <p class="navbar-brand">add item</p>
-    </header>
+<hr class="divider">
 
-    <div class="columns">
-        <div class="column">
-            <form action="/add" method="POST">
-                <div class="form-group input-group">
-                    <label class="form-label" for="input-title"></label>
-                    <input class="form-input" id="input-title" type="text" name="title" placeholder="[Add Item]"
-                        autofocus="autofocus" />
-                    <span class="ml-10"></span>
-                    <button class="btn btn-primary" type="submit">↵</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</section>
+<p class="section-label">add item</p>
+<form action="/add" method="POST" class="add-form">
+    <input class="add-input" id="input-title" type="text" name="title"
+        placeholder="what needs doing?" autofocus="autofocus" />
+    <button class="add-btn" type="submit">↵</button>
+</form>
 {{end}}
