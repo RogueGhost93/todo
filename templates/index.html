@@ -13,12 +13,12 @@
         <span class="todo-text">{{ $Todo.Title }}</span>
     </form>
     {{else}}
-    <div class="todo-item done">
-        <a class="todo-btn todo-btn-clear" href="/clear/{{$Todo.ID}}" title="Remove">
+    <form action="/clear/{{$Todo.ID}}" method="POST" class="todo-item done">
+        <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
             <i class="icon icon-cross"></i>
-        </a>
+        </button>
         <span class="todo-text">{{ $Todo.Title }}</span>
-    </div>
+    </form>
     {{end}}
     {{ end }}
 </div>

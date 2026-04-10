@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"git.mills.io/prologic/bitcask"
 	"git.mills.io/prologic/todo/static"
@@ -34,14 +35,14 @@ type server struct {
 func (s *server) render(name string, w http.ResponseWriter, ctx interface{}) {
 	buf, err := s.templates.Exec(name, ctx)
 	if err != nil {
-		log.WithError(err).Error("error rending template")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.WithError(err).Error("error rendering template")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
-	_, err = buf.WriteTo(w)
-	if err != nil {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if _, err = buf.WriteTo(w); err != nil {
 		log.WithError(err).Error("error writing response")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -76,7 +77,7 @@ func (s *server) IndexHandler() httprouter.Handle {
 		})
 		if err != nil {
 			log.WithError(err).Error("error listing todos")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
@@ -112,7 +113,11 @@ func (s *server) AddHandler() httprouter.Handle {
 			return
 		}
 
-		titleString := r.FormValue("title")
+		titleString := strings.TrimSpace(r.FormValue("title"))
+		if titleString == "" {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
 		if len(titleString) > s.maxTitleLength {
 			titleString = titleString[:s.maxTitleLength]
 		}
@@ -265,13 +270,24 @@ func (s *server) ClearHandler() httprouter.Handle {
 	}
 }
 
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "same-origin")
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *server) listenAndServe() {
 	log.Fatal(
 		http.ListenAndServe(
 			s.bind,
 			s.logger.Handler(
 				gziphandler.GzipHandler(
-					s.router,
+					securityHeaders(s.router),
 				),
 			),
 		),
@@ -304,14 +320,14 @@ func (s *server) initRoutes() {
 	s.router.GET("/", s.IndexHandler())
 	s.router.POST("/add", s.AddHandler())
 
-	s.router.GET("/done/:id", s.DoneHandler())
 	s.router.POST("/done/:id", s.DoneHandler())
-
-	s.router.GET("/clear/:id", s.ClearHandler())
 	s.router.POST("/clear/:id", s.ClearHandler())
 }
 
 func newServer(bind string, maxItems int, maxTitleLength int, colorTheme string) *server {
+	// Validate the theme file exists at startup rather than panicking on the first request.
+	static.MustGetFile(fmt.Sprintf("color-themes/%s.css", colorTheme))
+
 	server := &server{
 		bind:           bind,
 		router:         httprouter.New(),
