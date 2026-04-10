@@ -3,8 +3,8 @@
 <html lang="en">
 
 <head>
+    <link id="theme-link" rel="stylesheet" href="/color-theme.css">
     <link rel="stylesheet" href="/css/spectre-icons.css">
-    <link rel="stylesheet" href="/color-theme.css">
     {{ template "stylesheets" . }}
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
@@ -17,6 +17,16 @@
     <meta name="msapplication-config" content="/icons/browserconfig.xml">
     <meta name="theme-color" content="#ffffff">
     <title>todo</title>
+    <script>
+        // Apply saved theme immediately to avoid flash
+        (function () {
+            var saved = localStorage.getItem('theme');
+            var def = '{{ .ColorTheme }}';
+            if (saved && saved !== def) {
+                document.getElementById('theme-link').href = '/color-themes/' + saved + '.css';
+            }
+        })();
+    </script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -41,9 +51,39 @@
             font-weight: 700;
             letter-spacing: 0.15em;
             color: var(--label);
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
+        /* ── Theme switcher ── */
+        .theme-switcher {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .theme-swatch {
+            width: 1.125rem;
+            height: 1.125rem;
+            border-radius: 50%;
+            border: 2px solid;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s ease;
+        }
+
+        .theme-swatch:hover {
+            transform: scale(1.3);
+        }
+
+        .theme-swatch.active {
+            outline: 2px solid var(--label);
+            outline-offset: 3px;
+            transform: scale(1.15);
+        }
+
+        /* ── Todo list ── */
         .todo-list {
             display: flex;
             flex-direction: column;
@@ -191,9 +231,68 @@
 <body>
     <div class="app">
         <h1 class="app-title">todo</h1>
+        <div id="theme-switcher" class="theme-switcher"></div>
         {{template "content" .}}
     </div>
 </body>
+
+<script>
+    (function () {
+        const DEFAULT = '{{ .ColorTheme }}';
+        const THEMES = [
+            { id: 'dracula',           bg: '#282a36', border: '#ff79c6' },
+            { id: 'nord',              bg: '#2e3440', border: '#88c0d0' },
+            { id: 'catppuccin-mocha',  bg: '#1e1e2e', border: '#cba6f7' },
+            { id: 'catppuccin-latte',  bg: '#eff1f5', border: '#8839ef' },
+            { id: 'tokyo-night',       bg: '#1a1b26', border: '#7aa2f7' },
+            { id: 'rose-pine',         bg: '#191724', border: '#c4a7e7' },
+            { id: 'ayu',               bg: '#fafafa', border: '#55b4d4' },
+            { id: 'monokai',           bg: '#272822', border: '#66d9ef' },
+            { id: 'gruvbox-dark',      bg: '#282828', border: '#d79921' },
+            { id: 'gruvbox-light',     bg: '#fbf1c7', border: '#b16286' },
+            { id: 'lucario',           bg: '#2b3e50', border: '#e6db74' },
+            { id: 'solarized-dark',    bg: '#002b36', border: '#268bd2' },
+            { id: 'solarized-light',   bg: '#eee8d5', border: '#2aa198' },
+            { id: 'tomorrow-night',    bg: '#1d1f21', border: '#f0c674' },
+            { id: 'tomorrow',          bg: '#ffffff', border: '#eab700' },
+            { id: 'zenburn',           bg: '#3f3f3f', border: '#dcdccc' },
+        ];
+
+        const link = document.getElementById('theme-link');
+        const switcher = document.getElementById('theme-switcher');
+
+        function activeTheme() {
+            return localStorage.getItem('theme') || DEFAULT;
+        }
+
+        function setTheme(id, save) {
+            link.href = (id === DEFAULT) ? '/color-theme.css' : '/color-themes/' + id + '.css';
+            switcher.querySelectorAll('.theme-swatch').forEach(function (btn) {
+                btn.classList.toggle('active', btn.dataset.theme === id);
+            });
+            if (save) localStorage.setItem('theme', id);
+        }
+
+        function displayName(id) {
+            return id.split('-').map(function (w) {
+                return w.charAt(0).toUpperCase() + w.slice(1);
+            }).join(' ');
+        }
+
+        THEMES.forEach(function (t) {
+            var btn = document.createElement('button');
+            btn.className = 'theme-swatch';
+            btn.dataset.theme = t.id;
+            btn.title = displayName(t.id);
+            btn.style.background = t.bg;
+            btn.style.borderColor = t.border;
+            btn.addEventListener('click', function () { setTheme(t.id, true); });
+            switcher.appendChild(btn);
+        });
+
+        setTheme(activeTheme(), false);
+    })();
+</script>
 {{ template "scripts" . }}
 
 </html>

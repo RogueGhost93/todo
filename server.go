@@ -46,7 +46,8 @@ func (s *server) render(name string, w http.ResponseWriter, ctx interface{}) {
 }
 
 type templateContext struct {
-	TodoList []*Todo
+	TodoList   []*Todo
+	ColorTheme string
 }
 
 func (s *server) IndexHandler() httprouter.Handle {
@@ -82,7 +83,8 @@ func (s *server) IndexHandler() httprouter.Handle {
 		sort.Sort(todoList)
 
 		ctx := &templateContext{
-			TodoList: todoList,
+			TodoList:   todoList,
+			ColorTheme: s.colorTheme,
 		}
 
 		s.render("index", w, ctx)
@@ -285,6 +287,11 @@ func (s *server) initRoutes() {
 	s.router.ServeFiles(
 		"/icons/*filepath",
 		static.GetSubFilesystem("icons"),
+	)
+
+	s.router.ServeFiles(
+		"/color-themes/*filepath",
+		static.GetSubFilesystem("color-themes"),
 	)
 
 	s.router.GET("/color-theme.css", func(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
