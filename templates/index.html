@@ -35,12 +35,19 @@
 <div class="todo-list">
     {{ range $Todo := .TodoList }}
     {{if $Todo.Done}}
-    <form action="/clear/{{$Todo.ID}}" method="POST" class="todo-item done">
-        <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
-            <i class="icon icon-cross"></i>
-        </button>
+    <div class="todo-item done">
+        <form action="/done/{{$Todo.ID}}" method="POST" style="display:inline">
+            <button class="todo-btn todo-btn-undo" type="submit" title="Undo">
+                <i class="icon icon-back"></i>
+            </button>
+        </form>
         <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
-    </form>
+        <form action="/clear/{{$Todo.ID}}" method="POST" style="display:inline;margin-left:auto">
+            <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
+                <i class="icon icon-cross"></i>
+            </button>
+        </form>
+    </div>
     {{end}}
     {{ end }}
 </div>
