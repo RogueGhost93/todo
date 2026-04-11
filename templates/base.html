@@ -228,6 +228,39 @@
             padding: 1.5rem 0;
         }
 
+        /* ── BTC price widget ── */
+        .btc-widget {
+            position: fixed;
+            top: 0.6rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 0.65rem;
+            font-family: inherit;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--foreground);
+            opacity: 0.25;
+            padding: 0.25rem;
+            z-index: 100;
+            transition: opacity 0.15s ease;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .btc-widget:hover {
+            opacity: 0.6;
+        }
+
+        .btc-widget .btc-change {
+            font-size: 0.55rem;
+        }
+
+        .btc-widget .btc-change.up { color: var(--check); opacity: 1; }
+        .btc-widget .btc-change.down { color: var(--x); opacity: 1; }
+
         /* ── Theme picker ── */
         .theme-toggle {
             position: fixed;
@@ -307,6 +340,11 @@
 
     <button id="theme-toggle" class="theme-toggle">theme</button>
     <div id="theme-panel" class="theme-panel"></div>
+    <div id="btc-widget" class="btc-widget">
+        <span id="btc-label">BTC</span>
+        <span id="btc-price">…</span>
+        <span id="btc-change" class="btc-change"></span>
+    </div>
 </body>
 
 <script>
@@ -384,6 +422,40 @@
         });
 
         setTheme(activeTheme(), false);
+    })();
+
+    // ── BTC price ticker ──
+    (function () {
+        var priceEl  = document.getElementById('btc-price');
+        var changeEl = document.getElementById('btc-change');
+        var INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+        function formatPrice(n) {
+            return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+        }
+
+        function fetchBTC() {
+            fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var price  = data.bitcoin.usd;
+                    var change = data.bitcoin.usd_24h_change;
+                    priceEl.textContent = formatPrice(price);
+                    if (typeof change === 'number') {
+                        var sign = change >= 0 ? '+' : '';
+                        changeEl.textContent = sign + change.toFixed(1) + '%';
+                        changeEl.className = 'btc-change ' + (change >= 0 ? 'up' : 'down');
+                    }
+                })
+                .catch(function () {
+                    priceEl.textContent = '—';
+                    changeEl.textContent = '';
+                    changeEl.className = 'btc-change';
+                });
+        }
+
+        fetchBTC();
+        setInterval(fetchBTC, INTERVAL);
     })();
 
     // ── Inline editing ──
