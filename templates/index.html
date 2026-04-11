@@ -1,6 +1,8 @@
 {{define "content"}}
 <div class="todo-list">
-    {{ if not .TodoList }}
+    {{ $hasPending := false }}
+    {{ range $Todo := .TodoList }}{{ if not $Todo.Done }}{{ $hasPending = true }}{{ end }}{{ end }}
+    {{ if not $hasPending }}
     <p class="empty-state">nothing to do — add something below</p>
     {{ end }}
     {{ range $Todo := .TodoList }}
@@ -9,13 +11,6 @@
         <input type="hidden" name="id" value="{{ $Todo.ID }}" />
         <button class="todo-btn todo-btn-check" type="submit" title="Mark done">
             <i class="icon icon-check"></i>
-        </button>
-        <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
-    </form>
-    {{else}}
-    <form action="/clear/{{$Todo.ID}}" method="POST" class="todo-item done">
-        <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
-            <i class="icon icon-cross"></i>
         </button>
         <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
     </form>
@@ -31,4 +26,23 @@
         placeholder="what needs doing?" autofocus="autofocus" />
     <button class="add-btn" type="submit">↵</button>
 </form>
+
+{{ $hasDone := false }}
+{{ range $Todo := .TodoList }}{{ if $Todo.Done }}{{ $hasDone = true }}{{ end }}{{ end }}
+{{ if $hasDone }}
+<hr class="divider">
+<p class="section-label">done</p>
+<div class="todo-list">
+    {{ range $Todo := .TodoList }}
+    {{if $Todo.Done}}
+    <form action="/clear/{{$Todo.ID}}" method="POST" class="todo-item done">
+        <button class="todo-btn todo-btn-clear" type="submit" title="Remove">
+            <i class="icon icon-cross"></i>
+        </button>
+        <span class="todo-text" data-id="{{$Todo.ID}}">{{ $Todo.Title }}</span>
+    </form>
+    {{end}}
+    {{ end }}
+</div>
+{{ end }}
 {{end}}
