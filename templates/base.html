@@ -452,6 +452,16 @@
         setInterval(fetchBTC, INTERVAL);
     })();
 
+    // ── Focus add input on Enter ──
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        var tag = document.activeElement ? document.activeElement.tagName : '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+        e.preventDefault();
+        var addInput = document.getElementById('input-title');
+        if (addInput) addInput.focus();
+    });
+
     // ── Inline editing ──
     document.querySelectorAll('.todo-text').forEach(function (span) {
         span.addEventListener('click', function () {
@@ -490,6 +500,8 @@
                     e.preventDefault();
                     e.stopPropagation();
                     input.blur();
+                    var addInput = document.getElementById('input-title');
+                    if (addInput) addInput.focus();
                 }
                 if (e.key === 'Escape') {
                     cancelled = true;
